@@ -258,7 +258,7 @@ const HomePage = () => {
                   Compare Preços
                 </Typography>
                 <Typography variant="body1" color="text.secondary" align="center">
-                  Veja os preços dos produtos em diferentes supermercados da cidade de Jaú e encontre as melhores ofertas.
+                  Veja os preços dos produtos em diferentes supermercados da cidade de Jaú e região e encontre as melhores ofertas.
                 </Typography>
               </CardContent>
             </Card>

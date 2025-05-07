@@ -161,6 +161,12 @@ const UpgradePage = () => {
               </ListItemIcon>
               <ListItemText primary="Descubra o melhor supermercado para sua lista completa" />
             </ListItem>
+            <ListItem>
+              <ListItemIcon>
+                <CheckCircleIcon color="success" />
+              </ListItemIcon>
+              <ListItemText primary="Gere check-list dos produtos para acompanhar sua compra" />
+            </ListItem>
           </List>
         </CardContent>
         <CardActions sx={{ justifyContent: 'center', pb: 3 }}>

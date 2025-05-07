@@ -1,6 +1,7 @@
 const express = require('express');
 const ShoppingList = require('../models/ShoppingList');
 const Product = require('../models/Product');
+const Price = require('../models/Price'); // Esta importação é essencial
 const { protect, restrictTo } = require('../middleware/auth');
 const router = express.Router();
 
@@ -186,4 +187,168 @@ router.delete('/:id', protect, restrictTo('premium', 'admin'), async (req, res) 
   }
 });
 
+// Adicionar esta rota ao arquivo backend/routes/shoppingLists.js
+
+// Atualizar quantidade de um item na lista (apenas Premium)
+router.put('/:id/items/:productId', protect, restrictTo('premium', 'admin'), async (req, res) => {
+  try {
+    const { quantity } = req.body;
+    
+    // Verificar se a quantidade é válida
+    if (!quantity || quantity < 1) {
+      return res.status(400).json({ message: 'Quantidade inválida' });
+    }
+    
+    const list = await ShoppingList.findOne({
+      _id: req.params.id,
+      user: req.user._id
+    });
+    
+    if (!list) {
+      return res.status(404).json({ message: 'Lista de compras não encontrada' });
+    }
+    
+    // Encontrar o item na lista
+    const itemIndex = list.items.findIndex(
+      item => item.product.toString() === req.params.productId
+    );
+    
+    if (itemIndex === -1) {
+      return res.status(404).json({ message: 'Item não encontrado na lista' });
+    }
+    
+    // Atualizar quantidade
+    list.items[itemIndex].quantity = quantity;
+    list.updatedAt = Date.now();
+    
+    await list.save();
+    
+    res.json(list);
+  } catch (error) {
+    res.status(400).json({ message: 'Erro ao atualizar quantidade', error: error.message });
+  }
+});
+
+// Adicionar estas rotas ao arquivo backend/routes/shoppingLists.js
+
+router.put('/:id/finalize', protect, restrictTo('premium', 'admin'), async (req, res) => {
+  try {
+    console.log('Requisição para finalizar lista recebida:', req.params.id);
+    console.log('Opção de finalização:', req.body.finalizeOption);
+    
+    const { finalizeOption } = req.body;
+    
+    // Verificar se a opção de finalização é válida
+    if (!['single', 'best'].includes(finalizeOption)) {
+      console.log('Opção de finalização inválida:', finalizeOption);
+      return res.status(400).json({ message: 'Opção de finalização inválida' });
+    }
+    
+    const list = await ShoppingList.findOne({
+      _id: req.params.id,
+      user: req.user._id
+    }).populate('items.product', 'name brand category unitSize unit image');
+    
+    if (!list) {
+      console.log('Lista não encontrada');
+      return res.status(404).json({ message: 'Lista de compras não encontrada' });
+    }
+    
+    // Verificar se a lista já está finalizada
+    if (list.finalized) {
+      console.log('Lista já está finalizada');
+      return res.status(400).json({ message: 'Lista já está finalizada' });
+    }
+    
+    console.log('Lista encontrada, itens:', list.items.length);
+    
+    // Obter resultados de comparação de preços
+    const productIds = list.items.map(item => item.product._id);
+    
+    // Buscar preços no banco de dados
+    const prices = await Price.find({ product: { $in: productIds } })
+      .populate('product', 'name brand category unitSize unit image')
+      .populate('market', 'name address');
+    
+    console.log('Preços encontrados:', prices.length);
+    
+    // Organizar preços por produto
+    const comparisonResults = {};
+    productIds.forEach(productId => {
+      const productPrices = prices.filter(price => 
+        price.product._id.toString() === productId.toString()
+      );
+      
+      comparisonResults[productId.toString()] = {
+        product: list.items.find(item => 
+          item.product._id.toString() === productId.toString()
+        ).product,
+        prices: productPrices
+      };
+    });
+    
+    console.log('Resultados de comparação gerados');
+    
+    // Definir diretamente os campos
+    list.finalized = true;
+    list.finalizedAt = new Date();
+    list.finalizeOption = finalizeOption;
+    list.comparisonResults = comparisonResults;
+    list.checkedItems = {};
+    
+    console.log('Antes de salvar - finalized:', list.finalized);
+    console.log('Antes de salvar - finalizeOption:', list.finalizeOption);
+    
+    // Usar o método save para garantir que os middleware pre-save serão executados
+    await list.save();
+    
+    // Buscar a lista atualizada para verificar se os campos foram salvos
+    const updatedList = await ShoppingList.findById(list._id);
+    console.log('Após salvar - finalized:', updatedList.finalized);
+    console.log('Após salvar - finalizeOption:', updatedList.finalizeOption);
+    
+    // Retornar os dados atualizados
+    return res.json(updatedList);
+  } catch (error) {
+    console.error('Erro ao finalizar lista:', error);
+    res.status(500).json({ message: 'Erro ao finalizar lista', error: error.message });
+  }
+});
+
+
+// Atualizar itens marcados (checklist) de uma lista finalizada (apenas Premium)
+router.put('/:id/checked-items', protect, restrictTo('premium', 'admin'), async (req, res) => {
+  try {
+    const { checkedItems } = req.body;
+    
+    // Verificar se checkedItems é um objeto
+    if (!checkedItems || typeof checkedItems !== 'object') {
+      return res.status(400).json({ message: 'Formato de dados inválido' });
+    }
+    
+    const list = await ShoppingList.findOne({
+      _id: req.params.id,
+      user: req.user._id
+    });
+    
+    if (!list) {
+      return res.status(404).json({ message: 'Lista de compras não encontrada' });
+    }
+    
+    // Verificar se a lista está finalizada
+    if (!list.finalized) {
+      return res.status(400).json({ message: 'Lista não está finalizada' });
+    }
+    
+    // Atualizar checklist
+    list.checkedItems = checkedItems;
+    await list.save();
+    
+    res.json(list);
+  } catch (error) {
+    res.status(500).json({ message: 'Erro ao atualizar checklist', error: error.message });
+  }
+});
+
 module.exports = router;
+

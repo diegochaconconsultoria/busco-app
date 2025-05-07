@@ -139,10 +139,10 @@ const Header = () => {
                 onClose={handleMobileMenuClose}
                 sx={{ mt: 1 }}
               >
-                {/* Opção Produtos apenas se logado */}
+                {/* Opção Consultar Preços apenas se logado */}
                 {currentUser && !isAuthPage && (
                   <MenuItem component={Link} to="/products" onClick={handleMobileMenuClose}>
-                    Produtos
+                    Consultar Preços
                   </MenuItem>
                 )}
                 
@@ -181,7 +181,7 @@ const Header = () => {
             </>
           ) : (
             <Box sx={{ display: 'flex', gap: 2 }}>
-              {/* Opção Produtos apenas se logado */}
+              {/* Opção Consultar Preços apenas se logado */}
               {currentUser && !isAuthPage && (
                 <Button 
                   color="primary" 
@@ -189,7 +189,7 @@ const Header = () => {
                   to="/products"
                   sx={{ fontWeight: 500 }}
                 >
-                  Produtos
+                  Consultar Preços
                 </Button>
               )}
               

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion'; // Adicione esta importação
+import { motion } from 'framer-motion';
 import {
   Container, Typography, Grid, Card, CardContent, CardMedia,
   TextField, InputAdornment, MenuItem, FormControl,
@@ -85,7 +85,7 @@ const ProductsPage = () => {
     <Container>
       <FadeIn>
         <Typography variant="h4" component="h1" gutterBottom sx={{ mb: 3 }}>
-          Produtos
+          Consultar Preços
         </Typography>
       </FadeIn>
 
@@ -152,7 +152,7 @@ const ProductsPage = () => {
             ) : (
               <>
                 <Grid container spacing={3}>
-                  {paginatedProducts.map((product, index) => ( // Adicione o parâmetro index aqui
+                  {paginatedProducts.map((product, index) => (
                     <Grid item xs={12} sm={6} md={4} lg={3} key={product._id}>
                       <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
